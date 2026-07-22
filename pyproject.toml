@@ -1,0 +1,29 @@
+[project]
+name = "salary-linear-regression"
+version = "0.1.0"
+description = "Tech talent salary prediction (linear regression) — model, API, and Flutter client. Supports a mission of tackling unemployment/upskilling by quantifying market value."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "joblib>=1.3",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+notebook = [
+    "jupyter>=1.0",
+    "notebook>=7.1",
+    "nbconvert>=7.16",
+    "ipykernel>=6.29",
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,23 @@
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Flutter / Dart
+summative/FlutterApp/build/
+summative/FlutterApp/.dart_tool/
+summative/FlutterApp/.flutter-plugins
+summative/FlutterApp/.flutter-plugins-dependencies
+summative/FlutterApp/.idea/
+summative/FlutterApp/ios/Pods/
+summative/FlutterApp/android/.gradle/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# NOTE: model artifacts under summative/API/model/ are intentionally committed
+# so the deployed API can load and retrain them.
