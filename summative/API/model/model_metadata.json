@@ -1,0 +1,90 @@
+{
+  "best_model": "SGD Linear Regression (GD)",
+  "target": "salary_in_usd",
+  "features": [
+    "work_year",
+    "remote_ratio",
+    "experience_level",
+    "company_size",
+    "employment_type",
+    "job_category",
+    "company_location_grp"
+  ],
+  "metrics": {
+    "SGD Linear Regression (GD)": {
+      "Train RMSE": 48646.57,
+      "Test RMSE": 48644.64,
+      "Test MAE": 37236.41,
+      "Test R2": 0.4
+    },
+    "Batch GD Linear Regression": {
+      "Train RMSE": 48630.29,
+      "Test RMSE": 48672.3,
+      "Test MAE": 37268.65,
+      "Test R2": 0.4
+    },
+    "Random Forest": {
+      "Train RMSE": 45251.87,
+      "Test RMSE": 48968.11,
+      "Test MAE": 37241.0,
+      "Test R2": 0.39
+    },
+    "Decision Tree": {
+      "Train RMSE": 47104.45,
+      "Test RMSE": 49816.51,
+      "Test MAE": 37933.88,
+      "Test R2": 0.37
+    }
+  },
+  "allowed_values": {
+    "experience_level": [
+      "EN",
+      "MI",
+      "SE",
+      "EX"
+    ],
+    "employment_type": [
+      "FT",
+      "PT",
+      "CT",
+      "FL"
+    ],
+    "company_size": [
+      "S",
+      "M",
+      "L"
+    ],
+    "job_category": [
+      "Data Engineer",
+      "Data Scientist",
+      "Data Analyst",
+      "ML/AI Engineer",
+      "Management",
+      "Other"
+    ],
+    "company_location_grp": [
+      "US",
+      "GB",
+      "CA",
+      "ES",
+      "IN",
+      "DE",
+      "Other"
+    ],
+    "remote_ratio": [
+      0,
+      50,
+      100
+    ]
+  },
+  "ranges": {
+    "work_year": [
+      2020,
+      2027
+    ],
+    "remote_ratio": [
+      0,
+      100
+    ]
+  }
+}
