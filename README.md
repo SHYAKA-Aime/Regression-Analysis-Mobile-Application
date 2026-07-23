@@ -74,7 +74,7 @@ Example request body:
 ```
 
 ## Video demo
-YouTube (7 minutes or less): [https://youtu.be/1hrhL09SuOg](https://youtu.be/1hrhL09SuOg)
+YouTube Video Demo: [https://youtu.be/1hrhL09SuOg](https://youtu.be/1hrhL09SuOg)
 
 ## Repository layout
 ```
