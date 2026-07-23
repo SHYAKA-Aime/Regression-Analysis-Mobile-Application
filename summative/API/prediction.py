@@ -1,14 +1,13 @@
-"""FastAPI service for tech-talent salary prediction.
+"""FastAPI service for tech talent salary prediction.
 
-Endpoints
----------
-GET  /            -> redirects to the Swagger UI (/docs)
-GET  /health      -> liveness + which model is currently served
-POST /predict     -> predict salary_in_usd from a validated profile
-POST /retrain     -> append optional new data and retrain the model (hot-swap)
+Routes:
+    GET  /         redirects to the Swagger UI at /docs
+    GET  /health   returns status and the model currently in use
+    POST /predict  predicts salary_in_usd from a validated profile
+    POST /retrain  appends optional new data and retrains the model
 
-Run locally:  uv run uvicorn prediction:app --reload --port 8000
-Swagger UI:   http://localhost:8000/docs
+Run locally with: uv run uvicorn prediction:app --reload --port 8000
+Then open http://localhost:8000/docs
 """
 from __future__ import annotations
 
@@ -24,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-import ml  # shared training / feature-engineering logic
+import ml  # shared training and feature engineering logic
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
@@ -32,9 +31,6 @@ MODEL_PATH = os.path.join(MODEL_DIR, "best_model.pkl")
 META_PATH = os.path.join(MODEL_DIR, "model_metadata.json")
 DATA_PATH = os.path.join(MODEL_DIR, "training_data.csv")
 
-# ---------------------------------------------------------------------------
-# Load the trained pipeline + metadata at startup
-# ---------------------------------------------------------------------------
 STATE: dict = {"model": None, "meta": {}}
 
 
@@ -46,21 +42,20 @@ def load_model() -> None:
 
 load_model()
 
-# ---------------------------------------------------------------------------
-# Enumerations mirror the categories the model was trained on
-# ---------------------------------------------------------------------------
+
+# the enums below match the categories the model was trained on
 class ExperienceLevel(str, Enum):
-    EN = "EN"  # Entry / Junior
-    MI = "MI"  # Mid
-    SE = "SE"  # Senior
-    EX = "EX"  # Executive / Principal
+    EN = "EN"
+    MI = "MI"
+    SE = "SE"
+    EX = "EX"
 
 
 class EmploymentType(str, Enum):
-    FT = "FT"  # Full-time
-    PT = "PT"  # Part-time
-    CT = "CT"  # Contract
-    FL = "FL"  # Freelance
+    FT = "FT"
+    PT = "PT"
+    CT = "CT"
+    FL = "FL"
 
 
 class CompanySize(str, Enum):
@@ -88,24 +83,19 @@ class CompanyLocation(str, Enum):
     Other = "Other"
 
 
-class RemoteRatio(int, Enum):
-    onsite = 0
-    hybrid = 50
-    remote = 100
-
-
-# ---------------------------------------------------------------------------
-# Request / response schemas with enforced data types AND range constraints
-# ---------------------------------------------------------------------------
 class SalaryRequest(BaseModel):
+    """Input profile. Each field has a type, and numeric fields have a range."""
+
     work_year: int = Field(..., ge=2020, le=2027,
-                           description="Calendar year of the role (2020–2027).", examples=[2023])
+                           description="Year of the role, between 2020 and 2027.", examples=[2023])
     experience_level: ExperienceLevel = Field(..., description="EN, MI, SE or EX.")
     employment_type: EmploymentType = Field(..., description="FT, PT, CT or FL.")
     job_category: JobCategory = Field(..., description="Role family.")
     company_size: CompanySize = Field(..., description="S, M or L.")
     company_location_grp: CompanyLocation = Field(..., description="US, GB, CA, ES, IN, DE or Other.")
-    remote_ratio: RemoteRatio = Field(..., description="0 (on-site), 50 (hybrid) or 100 (remote).")
+    remote_ratio: int = Field(..., ge=0, le=100,
+                              description="Share of remote work from 0 to 100 (0 on site, 50 hybrid, 100 remote).",
+                              examples=[100])
 
     model_config = {
         "json_schema_extra": {
@@ -135,28 +125,22 @@ class RetrainResponse(BaseModel):
     metrics: dict
 
 
-# ---------------------------------------------------------------------------
-# App + CORS
-# ---------------------------------------------------------------------------
 app = FastAPI(
     title="Tech Talent Salary Prediction API",
-    description="Predicts a tech professional's expected annual salary (USD) from their profile. "
-                "Supports a talent-management mission: quantifying the market value of skills/experience.",
+    description="Predicts a tech professional's expected annual salary in USD from their profile.",
     version="1.0.0",
 )
 
-# CORS is scoped deliberately (not a blanket wildcard). See README for the full rationale:
-#  * Origins  -> only the deployed API host, the Flutter web dev server and localhost tooling.
-#               (Native mobile apps are NOT browsers and are unaffected by CORS, so they still work.)
-#  * Methods  -> only GET, POST, OPTIONS — the verbs this API actually exposes.
-#  * Headers  -> only Content-Type (JSON/form bodies); nothing else is needed.
-#  * Credentials -> disabled, because the API is stateless (no cookies / sessions).
+# CORS is set to specific values rather than a wildcard. Only our own frontends can call
+# the API from a browser. Native mobile apps are not browsers, so they are not affected by
+# CORS and keep working. We allow only the verbs and header this API needs, and turn
+# credentials off because the API is stateless (no cookies or sessions).
 ALLOWED_ORIGINS = [
     "http://localhost",
     "http://localhost:8000",
     "http://localhost:3000",   # Flutter web dev server
     "http://127.0.0.1:8000",
-    "https://tech-salary-api.onrender.com",  # deployed API host (update to your Render URL)
+    "https://tech-salary-api.onrender.com",  # deployed API host, update to your Render URL
 ]
 
 app.add_middleware(
@@ -169,9 +153,6 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 @app.get("/", include_in_schema=False)
 def root() -> RedirectResponse:
     return RedirectResponse(url="/docs")
@@ -188,12 +169,12 @@ def health() -> dict:
 
 @app.post("/predict", response_model=SalaryResponse)
 def predict(payload: SalaryRequest) -> SalaryResponse:
-    """Predict the expected annual salary (USD) for one profile."""
+    """Predict the expected annual salary in USD for one profile."""
     if STATE["model"] is None:
         raise HTTPException(status_code=503, detail="Model not loaded.")
     row = pd.DataFrame([{
         "work_year": payload.work_year,
-        "remote_ratio": int(payload.remote_ratio.value),
+        "remote_ratio": payload.remote_ratio,
         "experience_level": payload.experience_level.value,
         "company_size": payload.company_size.value,
         "employment_type": payload.employment_type.value,
@@ -202,7 +183,7 @@ def predict(payload: SalaryRequest) -> SalaryResponse:
     }])[ml.FEATURES]
     try:
         pred = float(STATE["model"].predict(row)[0])
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {exc}")
     return SalaryResponse(predicted_salary_usd=round(pred, 2),
                           model_used=STATE["meta"].get("best_model", "unknown"))
@@ -212,10 +193,10 @@ def predict(payload: SalaryRequest) -> SalaryResponse:
 async def retrain(file: UploadFile | None = File(default=None)) -> RetrainResponse:
     """Retrain the model.
 
-    Optionally upload a CSV of **new** labelled rows (same columns as the training data,
-    including `salary_in_usd`). New rows are appended to the stored dataset and all 4
-    models are retrained; the lowest-loss model is hot-swapped into service.
-    Call with no file to simply retrain on the existing accumulated data.
+    You can upload a CSV of new labelled rows with the same columns as the training data,
+    including salary_in_usd. The new rows are added to the stored data, all 4 models are
+    retrained, and the one with the lowest loss replaces the current model. Calling it
+    without a file simply retrains on the data already stored.
     """
     base = pd.read_csv(DATA_PATH)
 
@@ -235,14 +216,14 @@ async def retrain(file: UploadFile | None = File(default=None)) -> RetrainRespon
         combined = base
 
     if len(combined) < 50:
-        raise HTTPException(status_code=422, detail="Not enough data to train (need >= 50 rows).")
+        raise HTTPException(status_code=422, detail="Not enough data to train, need at least 50 rows.")
 
     try:
         best_model, best_name, metrics = ml.train_and_select(combined)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Retraining failed: {exc}")
 
-    # persist accumulated data + new model, then hot-swap
+    # save the accumulated data and the new model, then load it into the running app
     combined.to_csv(DATA_PATH, index=False)
     joblib.dump(best_model, MODEL_PATH)
     meta = STATE["meta"]

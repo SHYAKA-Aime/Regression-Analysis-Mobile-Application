@@ -1,7 +1,7 @@
-"""Shared ML logic for training / retraining the salary model.
+"""Shared logic for training and retraining the salary model.
 
-Kept separate from the FastAPI app so the notebook, the /predict endpoint and the
-/retrain endpoint all use the *same* feature engineering and preprocessing.
+Kept separate from the API so the prediction and retrain endpoints use the same
+feature engineering and preprocessing that the notebook used.
 """
 from __future__ import annotations
 
@@ -28,11 +28,8 @@ SIZE_ORDER = ["S", "M", "L"]
 
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Idempotent feature engineering shared with the notebook.
-
-    Works on the raw dataset (with job_title / company_location) *and* on already
-    engineered data (retraining), because missing columns are simply skipped.
-    """
+    """Feature engineering shared with the notebook. Safe to run on the raw data or on
+    already engineered data, because missing columns are skipped."""
     df = df.copy()
     df = df.drop(columns=["salary", "salary_currency", "employee_residence"], errors="ignore")
 
@@ -100,10 +97,10 @@ class BatchGDRegressor(BaseEstimator, RegressorMixin):
 
 
 def _candidate_models() -> dict[str, Pipeline]:
-    """The 4 models: 2 gradient-descent linear, 1 ensemble, 1 tree.
+    """The 4 models: two gradient descent linear, one ensemble, one tree.
 
-    Uses fixed (already-tuned) hyper-parameters so retraining is fast; the notebook
-    performs the heavier grid search.
+    Uses fixed hyperparameters so retraining stays fast. The notebook does the
+    heavier grid search.
     """
     return {
         "SGD Linear Regression (GD)": Pipeline([
@@ -129,9 +126,8 @@ def _candidate_models() -> dict[str, Pipeline]:
 
 
 def train_and_select(df: pd.DataFrame) -> tuple[Pipeline, str, dict]:
-    """Engineer -> split -> train 4 models -> return (best_pipeline, best_name, metrics).
-
-    'Best' = lowest test-set RMSE (our loss metric).
+    """Engineer the data, split it, train the 4 models, and return the best pipeline,
+    its name, and the metrics. Best means the lowest test RMSE, which is our loss metric.
     """
     data = engineer_features(df)
     missing = [c for c in FEATURES + [TARGET] if c not in data.columns]
