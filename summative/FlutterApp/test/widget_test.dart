@@ -5,12 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:salary_predictor/main.dart';
 
 void main() {
-  testWidgets('renders the prediction form and Predict button', (WidgetTester tester) async {
+  testWidgets('renders the form with 7 inputs and a Predict button', (WidgetTester tester) async {
     await tester.pumpWidget(const SalaryApp());
 
-    // The single page shows a Predict button and the seven input fields.
+    // Two typed fields (work year, remote ratio) plus five dropdowns = seven model inputs.
+    expect(find.byType(TextField), findsNWidgets(2));
+    expect(find.byWidgetPredicate((w) => w is DropdownButtonFormField), findsNWidgets(5));
     expect(find.text('Predict'), findsOneWidget);
-    expect(find.byType(TextField), findsNWidgets(7));
     expect(find.text('Estimate your market salary'), findsOneWidget);
   });
 }

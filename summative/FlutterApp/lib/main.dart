@@ -3,12 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-/// Base URL of the deployed FastAPI service (Task 2).
-/// Replace with your Render URL. For an Android emulator hitting a local
-/// server use http://10.0.2.2:8000 ; for iOS simulator use http://localhost:8000.
 const String kApiBaseUrl = 'https://tech-salary-api.onrender.com';
 const String kPredictPath = '/predict';
 
+// each map sends the code the model expects, shown with a friendly label
+const Map<String, String> kExperience = {
+  'EN': 'Entry (EN)', 'MI': 'Mid (MI)', 'SE': 'Senior (SE)', 'EX': 'Executive (EX)',
+};
+const Map<String, String> kEmployment = {
+  'FT': 'Full time (FT)', 'PT': 'Part time (PT)', 'CT': 'Contract (CT)', 'FL': 'Freelance (FL)',
+};
+const Map<String, String> kJobCategory = {
+  'Data Engineer': 'Data Engineer', 'Data Scientist': 'Data Scientist',
+  'Data Analyst': 'Data Analyst', 'ML/AI Engineer': 'ML/AI Engineer',
+  'Management': 'Management', 'Other': 'Other',
+};
+const Map<String, String> kCompanySize = {
+  'S': 'Small (S)', 'M': 'Medium (M)', 'L': 'Large (L)',
+};
+const Map<String, String> kCompanyLocation = {
+  'US': 'United States', 'GB': 'United Kingdom', 'CA': 'Canada',
+  'ES': 'Spain', 'IN': 'India', 'DE': 'Germany', 'Other': 'Other',
+};
 void main() => runApp(const SalaryApp());
 
 class SalaryApp extends StatelessWidget {
@@ -36,14 +52,14 @@ class PredictPage extends StatefulWidget {
 }
 
 class _PredictPageState extends State<PredictPage> {
-  // One controller per model variable (7 inputs = 7 model features).
   final _workYear = TextEditingController(text: '2023');
-  final _experience = TextEditingController(text: 'SE');
-  final _employment = TextEditingController(text: 'FT');
-  final _jobCategory = TextEditingController(text: 'Data Scientist');
-  final _companySize = TextEditingController(text: 'M');
-  final _companyLocation = TextEditingController(text: 'US');
   final _remoteRatio = TextEditingController(text: '100');
+
+  String _experience = 'SE';
+  String _employment = 'FT';
+  String _jobCategory = 'Data Scientist';
+  String _companySize = 'M';
+  String _companyLocation = 'US';
 
   bool _loading = false;
   String? _resultText;
@@ -51,45 +67,30 @@ class _PredictPageState extends State<PredictPage> {
 
   @override
   void dispose() {
-    for (final c in [
-      _workYear, _experience, _employment, _jobCategory,
-      _companySize, _companyLocation, _remoteRatio,
-    ]) {
-      c.dispose();
-    }
+    _workYear.dispose();
+    _remoteRatio.dispose();
     super.dispose();
   }
 
   Future<void> _predict() async {
-    // ---- client-side validation: missing / wrong type ----
-    final fields = {
-      'work_year': _workYear.text.trim(),
-      'experience_level': _experience.text.trim().toUpperCase(),
-      'employment_type': _employment.text.trim().toUpperCase(),
-      'job_category': _jobCategory.text.trim(),
-      'company_size': _companySize.text.trim().toUpperCase(),
-      'company_location_grp': _companyLocation.text.trim().toUpperCase(),
-      'remote_ratio': _remoteRatio.text.trim(),
-    };
-    final missing = fields.entries.where((e) => e.value.isEmpty).map((e) => e.key).toList();
-    if (missing.isNotEmpty) {
-      _show('Missing value(s): ${missing.join(', ')}', isError: true);
+    if (_workYear.text.trim().isEmpty || _remoteRatio.text.trim().isEmpty) {
+      _show('Please fill in the work year and remote ratio.', isError: true);
       return;
     }
-    final year = int.tryParse(fields['work_year']!);
-    final remote = int.tryParse(fields['remote_ratio']!);
+    final year = int.tryParse(_workYear.text.trim());
+    final remote = int.tryParse(_remoteRatio.text.trim());
     if (year == null || remote == null) {
-      _show('work_year and remote_ratio must be whole numbers.', isError: true);
+      _show('Work year and remote ratio must be whole numbers.', isError: true);
       return;
     }
 
     final body = <String, dynamic>{
       'work_year': year,
-      'experience_level': fields['experience_level'],
-      'employment_type': fields['employment_type'],
-      'job_category': fields['job_category'],
-      'company_size': fields['company_size'],
-      'company_location_grp': fields['company_location_grp'],
+      'experience_level': _experience,
+      'employment_type': _employment,
+      'job_category': _jobCategory,
+      'company_size': _companySize,
+      'company_location_grp': _companyLocation,
       'remote_ratio': remote,
     };
 
@@ -113,7 +114,7 @@ class _PredictPageState extends State<PredictPage> {
             isError: true);
       }
     } catch (e) {
-      _show('Could not reach the API. Check the URL / connection.\n$e', isError: true);
+      _show('Could not reach the API. Check the URL or your connection.\n$e', isError: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -124,7 +125,7 @@ class _PredictPageState extends State<PredictPage> {
       final detail = decoded['detail'];
       if (detail is List) {
         return detail
-            .map((d) => '• ${(d['loc'] as List).last}: ${d['msg']}')
+            .map((d) => '- ${(d['loc'] as List).last}: ${d['msg']}')
             .join('\n');
       }
       return detail.toString();
@@ -183,15 +184,18 @@ class _PredictPageState extends State<PredictPage> {
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          _numField(_workYear, 'Work year', 'Year 2020-2027, e.g. 2023'),
-                          _textField(_experience, 'Experience level', 'EN, MI, SE or EX'),
-                          _textField(_employment, 'Employment type', 'FT, PT, CT or FL'),
-                          _textField(_jobCategory, 'Job category',
-                              'Data Engineer / Data Scientist / Data Analyst / ML/AI Engineer / Management / Other'),
-                          _textField(_companySize, 'Company size', 'S, M or L'),
-                          _textField(_companyLocation, 'Company location',
-                              'US, GB, CA, ES, IN, DE or Other'),
-                          _numField(_remoteRatio, 'Remote ratio', '0, 50 or 100'),
+                          _numField(_workYear, 'Work year', 'Year 2020 to 2027, e.g. 2023'),
+                          _dropdown<String>('Experience level', _experience, kExperience,
+                              (v) => setState(() => _experience = v!)),
+                          _dropdown<String>('Employment type', _employment, kEmployment,
+                              (v) => setState(() => _employment = v!)),
+                          _dropdown<String>('Job category', _jobCategory, kJobCategory,
+                              (v) => setState(() => _jobCategory = v!)),
+                          _dropdown<String>('Company size', _companySize, kCompanySize,
+                              (v) => setState(() => _companySize = v!)),
+                          _dropdown<String>('Company location', _companyLocation, kCompanyLocation,
+                              (v) => setState(() => _companyLocation = v!)),
+                          _numField(_remoteRatio, 'Remote ratio', 'From 0 to 100 (0 on site, 50 hybrid, 100 remote)'),
                         ],
                       ),
                     ),
@@ -256,16 +260,20 @@ class _PredictPageState extends State<PredictPage> {
         ),
       );
 
-  Widget _textField(TextEditingController c, String label, String helper) => Padding(
+  Widget _dropdown<T>(String label, T value, Map<T, String> options, ValueChanged<T?> onChanged) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: TextField(
-          controller: c,
-          textCapitalization: TextCapitalization.characters,
-          decoration: _decoration(label, helper),
+        child: DropdownButtonFormField<T>(
+          initialValue: value,
+          isExpanded: true,
+          decoration: _decoration(label, null),
+          items: options.entries
+              .map((e) => DropdownMenuItem<T>(value: e.key, child: Text(e.value)))
+              .toList(),
+          onChanged: onChanged,
         ),
       );
 
-  InputDecoration _decoration(String label, String helper) => InputDecoration(
+  InputDecoration _decoration(String label, String? helper) => InputDecoration(
         labelText: label,
         helperText: helper,
         helperMaxLines: 2,
