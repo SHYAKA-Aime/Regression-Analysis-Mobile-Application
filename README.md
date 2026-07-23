@@ -1,5 +1,9 @@
 # Tech Talent Salary Prediction
 
+**Live API (Swagger UI):** https://tech-salary-api.onrender.com/docs
+**Predict endpoint (POST):** https://tech-salary-api.onrender.com/predict
+**Video demo:** https://youtu.be/REPLACE_WITH_YOUR_VIDEO
+
 ## Mission and problem
 My mission is to use technology to tackle unemployment, education and access to tech.
 This project predicts a tech professional's expected annual salary (USD) from their profile,
