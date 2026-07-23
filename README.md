@@ -1,11 +1,10 @@
 # Tech Talent Salary Prediction
 
 ## Mission and problem
-My mission is to use technology to help solve unemployment, education and access to tech
-problems, and to promote fairer opportunity. This project predicts a tech professional's
-expected annual salary in USD from their profile, so a talent platform can show members what
-their skills are worth and what upskilling or a role change could be worth to them. The task
-is regression, predicting a continuous salary value.
+My mission is to use technology to tackle unemployment, education and access to tech.
+This project predicts a tech professional's expected annual salary (USD) from their profile,
+so a talent platform can show members their market value and what upskilling is worth.
+It is a regression problem with a continuous salary target.
 
 ## Dataset
 The data is the Data Science / Tech Job Salaries dataset from Kaggle:
