@@ -108,9 +108,9 @@ uv run jupyter nbconvert --to notebook --execute --inplace linear_regression/mul
 cd summative/API
 uv run --project .. uvicorn prediction:app --reload --port 8000
 ```
-Open http://localhost:8000/docs. To retrain and optionally add new rows:
+This serves the API on port 8000 for local development. To retrain and optionally add new rows:
 ```bash
-curl -X POST http://localhost:8000/retrain -F "file=@new_rows.csv"
+curl -X POST http://127.0.0.1:8000/retrain -F "file=@new_rows.csv"
 ```
 
 ### Deploy the API to Render
@@ -125,8 +125,7 @@ curl -X POST http://localhost:8000/retrain -F "file=@new_rows.csv"
 cd summative/FlutterApp
 flutter pub get
 ```
-Open `lib/main.dart` and set `kApiBaseUrl` to your deployed Render URL. If you run the API locally
-with an Android emulator, use `http://10.0.2.2:8000`. Then:
+The app already points at the deployed API through `kApiBaseUrl` in `lib/main.dart`. Then:
 ```bash
 flutter run
 ```
