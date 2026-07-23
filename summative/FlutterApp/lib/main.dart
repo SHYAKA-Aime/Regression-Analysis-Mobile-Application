@@ -6,25 +6,6 @@ import 'package:http/http.dart' as http;
 const String kApiBaseUrl = 'https://tech-salary-api.onrender.com';
 const String kPredictPath = '/predict';
 
-// each map sends the code the model expects, shown with a friendly label
-const Map<String, String> kExperience = {
-  'EN': 'Entry (EN)', 'MI': 'Mid (MI)', 'SE': 'Senior (SE)', 'EX': 'Executive (EX)',
-};
-const Map<String, String> kEmployment = {
-  'FT': 'Full time (FT)', 'PT': 'Part time (PT)', 'CT': 'Contract (CT)', 'FL': 'Freelance (FL)',
-};
-const Map<String, String> kJobCategory = {
-  'Data Engineer': 'Data Engineer', 'Data Scientist': 'Data Scientist',
-  'Data Analyst': 'Data Analyst', 'ML/AI Engineer': 'ML/AI Engineer',
-  'Management': 'Management', 'Other': 'Other',
-};
-const Map<String, String> kCompanySize = {
-  'S': 'Small (S)', 'M': 'Medium (M)', 'L': 'Large (L)',
-};
-const Map<String, String> kCompanyLocation = {
-  'US': 'United States', 'GB': 'United Kingdom', 'CA': 'Canada',
-  'ES': 'Spain', 'IN': 'India', 'DE': 'Germany', 'Other': 'Other',
-};
 void main() => runApp(const SalaryApp());
 
 class SalaryApp extends StatelessWidget {
@@ -52,14 +33,14 @@ class PredictPage extends StatefulWidget {
 }
 
 class _PredictPageState extends State<PredictPage> {
+  // one text field per model variable (7 fields = 7 variables)
   final _workYear = TextEditingController(text: '2023');
+  final _experience = TextEditingController(text: 'SE');
+  final _employment = TextEditingController(text: 'FT');
+  final _jobCategory = TextEditingController(text: 'Data Scientist');
+  final _companySize = TextEditingController(text: 'M');
+  final _companyLocation = TextEditingController(text: 'US');
   final _remoteRatio = TextEditingController(text: '100');
-
-  String _experience = 'SE';
-  String _employment = 'FT';
-  String _jobCategory = 'Data Scientist';
-  String _companySize = 'M';
-  String _companyLocation = 'US';
 
   bool _loading = false;
   String? _resultText;
@@ -67,18 +48,33 @@ class _PredictPageState extends State<PredictPage> {
 
   @override
   void dispose() {
-    _workYear.dispose();
-    _remoteRatio.dispose();
+    for (final c in [
+      _workYear, _experience, _employment, _jobCategory,
+      _companySize, _companyLocation, _remoteRatio,
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _predict() async {
-    if (_workYear.text.trim().isEmpty || _remoteRatio.text.trim().isEmpty) {
-      _show('Please fill in the work year and remote ratio.', isError: true);
+    final fields = {
+      'work_year': _workYear.text.trim(),
+      'experience_level': _experience.text.trim().toUpperCase(),
+      'employment_type': _employment.text.trim().toUpperCase(),
+      'job_category': _jobCategory.text.trim(),
+      'company_size': _companySize.text.trim().toUpperCase(),
+      'company_location_grp': _companyLocation.text.trim().toUpperCase(),
+      'remote_ratio': _remoteRatio.text.trim(),
+    };
+
+    final missing = fields.entries.where((e) => e.value.isEmpty).map((e) => e.key).toList();
+    if (missing.isNotEmpty) {
+      _show('Missing value(s): ${missing.join(', ')}', isError: true);
       return;
     }
-    final year = int.tryParse(_workYear.text.trim());
-    final remote = int.tryParse(_remoteRatio.text.trim());
+    final year = int.tryParse(fields['work_year']!);
+    final remote = int.tryParse(fields['remote_ratio']!);
     if (year == null || remote == null) {
       _show('Work year and remote ratio must be whole numbers.', isError: true);
       return;
@@ -86,11 +82,11 @@ class _PredictPageState extends State<PredictPage> {
 
     final body = <String, dynamic>{
       'work_year': year,
-      'experience_level': _experience,
-      'employment_type': _employment,
-      'job_category': _jobCategory,
-      'company_size': _companySize,
-      'company_location_grp': _companyLocation,
+      'experience_level': fields['experience_level'],
+      'employment_type': fields['employment_type'],
+      'job_category': fields['job_category'],
+      'company_size': fields['company_size'],
+      'company_location_grp': fields['company_location_grp'],
       'remote_ratio': remote,
     };
 
@@ -185,16 +181,12 @@ class _PredictPageState extends State<PredictPage> {
                       child: Column(
                         children: [
                           _numField(_workYear, 'Work year', 'Year 2020 to 2027, e.g. 2023'),
-                          _dropdown<String>('Experience level', _experience, kExperience,
-                              (v) => setState(() => _experience = v!)),
-                          _dropdown<String>('Employment type', _employment, kEmployment,
-                              (v) => setState(() => _employment = v!)),
-                          _dropdown<String>('Job category', _jobCategory, kJobCategory,
-                              (v) => setState(() => _jobCategory = v!)),
-                          _dropdown<String>('Company size', _companySize, kCompanySize,
-                              (v) => setState(() => _companySize = v!)),
-                          _dropdown<String>('Company location', _companyLocation, kCompanyLocation,
-                              (v) => setState(() => _companyLocation = v!)),
+                          _textField(_experience, 'Experience level', 'EN, MI, SE or EX'),
+                          _textField(_employment, 'Employment type', 'FT, PT, CT or FL'),
+                          _textField(_jobCategory, 'Job category',
+                              'Data Engineer, Data Scientist, Data Analyst, ML/AI Engineer, Management, Other'),
+                          _textField(_companySize, 'Company size', 'S, M or L'),
+                          _textField(_companyLocation, 'Company location', 'US, GB, CA, ES, IN, DE or Other'),
                           _numField(_remoteRatio, 'Remote ratio', 'From 0 to 100 (0 on site, 50 hybrid, 100 remote)'),
                         ],
                       ),
@@ -260,20 +252,16 @@ class _PredictPageState extends State<PredictPage> {
         ),
       );
 
-  Widget _dropdown<T>(String label, T value, Map<T, String> options, ValueChanged<T?> onChanged) => Padding(
+  Widget _textField(TextEditingController c, String label, String helper) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: DropdownButtonFormField<T>(
-          initialValue: value,
-          isExpanded: true,
-          decoration: _decoration(label, null),
-          items: options.entries
-              .map((e) => DropdownMenuItem<T>(value: e.key, child: Text(e.value)))
-              .toList(),
-          onChanged: onChanged,
+        child: TextField(
+          controller: c,
+          textCapitalization: TextCapitalization.characters,
+          decoration: _decoration(label, helper),
         ),
       );
 
-  InputDecoration _decoration(String label, String? helper) => InputDecoration(
+  InputDecoration _decoration(String label, String helper) => InputDecoration(
         labelText: label,
         helperText: helper,
         helperMaxLines: 2,
