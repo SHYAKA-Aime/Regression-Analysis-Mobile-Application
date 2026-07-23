@@ -1,7 +1,7 @@
 [project]
 name = "salary-linear-regression"
 version = "0.1.0"
-description = "Tech talent salary prediction (linear regression) — model, API, and Flutter client. Supports a mission of tackling unemployment/upskilling by quantifying market value."
+description = "Tech talent salary prediction with linear regression. Includes the model notebook, a FastAPI service, and a Flutter app."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
