@@ -79,10 +79,10 @@ YouTube (7 minutes or less): `https://youtu.be/REPLACE_WITH_YOUR_VIDEO`
 ## Repository layout
 ```
 linear_regression_model/
-  pyproject.toml
-  uv.lock
   render.yaml
   summative/
+    pyproject.toml
+    uv.lock
     linear_regression/
       multivariate.ipynb
       data/ds_salaries.csv
@@ -98,14 +98,15 @@ linear_regression_model/
 
 ### Notebook
 ```bash
+cd summative
 uv sync --extra notebook
-uv run jupyter nbconvert --to notebook --execute --inplace summative/linear_regression/multivariate.ipynb
+uv run jupyter nbconvert --to notebook --execute --inplace linear_regression/multivariate.ipynb
 ```
 
 ### API locally
 ```bash
 cd summative/API
-uv run --project ../.. uvicorn prediction:app --reload --port 8000
+uv run --project .. uvicorn prediction:app --reload --port 8000
 ```
 Open http://localhost:8000/docs. To retrain and optionally add new rows:
 ```bash
