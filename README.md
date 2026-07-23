@@ -1,8 +1,8 @@
 # Tech Talent Salary Prediction
 
-**Live API (Swagger UI):** https://tech-salary-api.onrender.com/docs
-**Predict endpoint (POST):** https://tech-salary-api.onrender.com/predict
-**Video demo:** https://youtu.be/REPLACE_WITH_YOUR_VIDEO
+- **Live API (Swagger UI):** [https://tech-salary-api.onrender.com/docs](https://tech-salary-api.onrender.com/docs)
+- **Predict endpoint (POST):** [https://tech-salary-api.onrender.com/predict](https://tech-salary-api.onrender.com/predict)
+- **Video demo:** [https://youtu.be/REPLACE_WITH_YOUR_VIDEO](https://youtu.be/REPLACE_WITH_YOUR_VIDEO)
 
 ## Mission and problem
 My mission is to use technology to tackle unemployment, education and access to tech.
@@ -60,10 +60,10 @@ train and test, so it is saved as `summative/API/model/best_model.pkl` and serve
 ## Public API
 The API is deployed and publicly reachable on Render:
 
-- Base URL: `https://tech-salary-api.onrender.com`
-- Swagger UI: `https://tech-salary-api.onrender.com/docs`
-- Predict endpoint: `POST https://tech-salary-api.onrender.com/predict`
-- Health check: `https://tech-salary-api.onrender.com/health`
+- Base URL: [https://tech-salary-api.onrender.com](https://tech-salary-api.onrender.com)
+- Swagger UI: [https://tech-salary-api.onrender.com/docs](https://tech-salary-api.onrender.com/docs)
+- Predict endpoint (POST): [https://tech-salary-api.onrender.com/predict](https://tech-salary-api.onrender.com/predict)
+- Health check: [https://tech-salary-api.onrender.com/health](https://tech-salary-api.onrender.com/health)
 
 The free tier sleeps when idle, so the first request after a while can take about 30 to 60 seconds
 to wake up.
